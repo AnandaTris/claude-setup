@@ -1,0 +1,40 @@
+# Allowlist repo: ignore everything, then re-include only hand-authored config.
+# Last matching pattern wins, so order here matters.
+
+# 1. Ignore all files, but still descend into directories.
+*
+!*/
+
+# 2. Re-include the things worth versioning.
+!.gitignore
+!CLAUDE.md
+!settings.json
+!settings.local.json
+!hooks/**
+!statusline-command.sh
+!projects/*/memory/**
+
+# 3. Re-exclude heavy or churny trees entirely so git never walks them.
+/backups/
+/cache/
+/daemon/
+/downloads/
+/file-history/
+/ide/
+/jobs/
+/paste-cache/
+/plans/
+/plugins/
+/session-env/
+/sessions/
+/shell-snapshots/
+/skills/
+/tasks/
+/telemetry/
+
+# Never track app-written state or secrets.
+.claude.json
+*.log
+*.lock
+*-cache.json
+setting.json

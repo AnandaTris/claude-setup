@@ -1,0 +1,35 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git clone *)",
+      "Bash(./setup)",
+      "Bash(curl -fsSL https://bun.sh/install)",
+      "Bash(bash)",
+      "Bash(~/.bun/bin/bun run *)",
+      "Bash(~/.bun/bin/bun ./setup)",
+      "Bash(~/.bun/bin/bun setup *)",
+      "Bash(PATH=__TRACKED_VAR__:__TRACKED_VAR__/.bun/bin cd ~/.claude/skills/gstack)",
+      "Bash(bash setup)",
+      "Bash(/usr/bin/time zsh -i -c exit)",
+      "Bash(/usr/bin/time zoxide query -l)",
+      "Bash(zoxide query *)",
+      "Bash(git config *)",
+      "Bash(git --version)",
+      "Bash(awk '{print $5, $9}')",
+      "Bash(awk '{print $1\" lines\"}')",
+      "Bash(zsh -ic 'echo \"USE_ASYNC=[${ZSH_AUTOSUGGEST_USE_ASYNC:-unset}]\"; echo \"STRATEGY=[${ZSH_AUTOSUGGEST_STRATEGY:-default\\(history\\)}]\"; echo \"MANUAL_REBIND=[${ZSH_AUTOSUGGEST_MANUAL_REBIND:-unset}]\"; echo \"BUFFER_MAX=[${ZSH_AUTOSUGGEST_BUFFER_MAX_SIZE:-unset}]\"')",
+      "Bash(awk '{print $5, $6, $7, $8, $9}')",
+      "Bash(awk 'NR==1 || /\\\\/$/ {print}')",
+      "Bash(awk '{print $1\" evicted placeholders in ~/Documents\"}')",
+      "Bash(mkdir -p /Users/anandatriharismaroso/Developer/GitHub)",
+      "Bash(nohup rsync -a --remove-source-files /Users/anandatriharismaroso/Documents/GitHub/ /Users/anandatriharismaroso/Developer/GitHub/)",
+      "Bash(echo \"pid: $!\")",
+      "Bash([ -f \"$SRC/lab_toctou/Root\" ])",
+      "Bash([ -f \"$DST/GitHub/lab_toctou/Root\" ])",
+      "WebSearch",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Skill(humanizer)"
+    ]
+  }
+}
