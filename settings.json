@@ -1,7 +1,25 @@
 {
+  "attribution": {
+    "commit": "",
+    "pr": "",
+    "sessionUrl": false
+  },
   "includeCoAuthoredBy": false,
   "permissions": {
+    "allow": [
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push *)",
+      "Bash(git remote *)",
+      "Bash(git status*)",
+      "Bash(git log*)",
+      "Bash(git diff*)",
+      "Bash(git show*)"
+    ],
     "deny": [
+      "Bash(git push --force*)",
+      "Bash(git push -f *)",
+      "Bash(git push --mirror*)",
       "Read(//**/.env)",
       "Read(//**/.env.*)",
       "Read(//**/.zshrc)",
@@ -18,7 +36,7 @@
       "Grep(//**/.bash_profile)"
     ]
   },
-  "model": "opus[1m]",
+  "model": "claude-fable-5[1m]",
   "hooks": {
     "PreToolUse": [
       {
@@ -32,6 +50,11 @@
           {
             "type": "command",
             "command": "bash ~/.claude/hooks/block-secret-reads.sh",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "jq -r \".tool_input.command // \\\"\\\"\" | grep -qiE \"git[[:space:]]+push.*(--force|--mirror|[[:space:]]-f([[:space:]]|$))\" && printf \"%s\" \"{\\\"hookSpecificOutput\\\":{\\\"hookEventName\\\":\\\"PreToolUse\\\",\\\"permissionDecision\\\":\\\"deny\\\",\\\"permissionDecisionReason\\\":\\\"Blocked: force push. You review force pushes yourself. Run it manually if you actually want it.\\\"}}\" || true",
             "timeout": 10
           }
         ]
