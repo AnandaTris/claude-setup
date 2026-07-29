@@ -13,6 +13,7 @@
 !hooks/**
 !statusline-command.sh
 !projects/*/memory/**
+!skill guide download for Claude.md
 
 # 3. Re-exclude heavy or churny trees entirely so git never walks them.
 /backups/
@@ -28,11 +29,18 @@
 /session-env/
 /sessions/
 /shell-snapshots/
-/skills/
 /tasks/
 /telemetry/
 
-# Never track app-written state or secrets.
+# skills/ is 393MB and reinstallable — see "skill guide download for Claude.md".
+# Exclude its contents rather than the directory itself, so the one skill with no
+# upstream (gemini-media, 28K) can still be re-included below.
+/skills/*
+!/skills/gemini-media/
+!/skills/gemini-media/**
+
+# Never track app-written state, macOS cruft, or secrets.
+.DS_Store
 .claude.json
 *.log
 *.lock
