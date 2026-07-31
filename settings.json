@@ -80,6 +80,9 @@
     }
   },
   "effortLevel": "xhigh",
+  "autoCompactEnabled": true,
+  "autoCompactWindow": 200000,
+  "precomputeCompactionEnabled": true,
   "tui": "fullscreen",
   "agentPushNotifEnabled": true,
   "skipWorkflowUsageWarning": true
