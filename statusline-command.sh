@@ -68,7 +68,7 @@ quota_seg() {
   printf '%s' "${dim}·${reset} ${_c}${_label}:${_int}%${reset}"
 }
 
-five_seg=$(quota_seg "$five" "5" '\033[0;36m')
+five_seg=$(quota_seg "$five" "five" '\033[0;36m')
 week_seg=$(quota_seg "$week" "W" '\033[0;35m')
 
 [ -n "$five_seg" ] && line="${line} ${five_seg}"
