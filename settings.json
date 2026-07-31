@@ -36,7 +36,6 @@
       "Grep(//**/.bash_profile)"
     ]
   },
-  "model": "claude-fable-5[1m]",
   "hooks": {
     "PreToolUse": [
       {
@@ -81,5 +80,6 @@
   },
   "effortLevel": "xhigh",
   "tui": "fullscreen",
-  "agentPushNotifEnabled": true
+  "agentPushNotifEnabled": true,
+  "skipWorkflowUsageWarning": true
 }

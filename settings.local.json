@@ -29,7 +29,9 @@
       "WebSearch",
       "WebFetch(domain:github.com)",
       "WebFetch(domain:raw.githubusercontent.com)",
-      "Skill(humanizer)"
+      "Skill(humanizer)",
+      "mcp__claude_ai_8x__list_library_notes",
+      "mcp__claude_ai_8x__query_knowledge"
     ]
   }
 }
