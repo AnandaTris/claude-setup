@@ -34,7 +34,8 @@
       "Grep(//**/.zshenv)",
       "Grep(//**/.zprofile)",
       "Grep(//**/.bash_profile)"
-    ]
+    ],
+    "defaultMode": "auto"
   },
   "hooks": {
     "PreToolUse": [
