@@ -43,6 +43,20 @@ Codex is a read-only second opinion from a different model. It only runs at gate
 it never writes code. Route work through these gates so the outside voice actually
 gets used instead of sitting idle.
 
+**Clarity before planning. Planning before code.** For any task beyond a trivial edit,
+resolve ambiguity first, then plan, then build — in that order. Do not jump to code
+because the request sounds clear; requests that sound clear are where assumptions hide.
+
+- Ambiguous scope, or a "build X" with unstated requirements → `superpowers:brainstorming`
+  to surface intent and constraints before anything is designed.
+- A decision or plan that needs stress-testing → `grilling` (or `grill-me`) to attack
+  the reasoning before it gets expensive to change.
+- Then `/spec` or `/autoplan` to turn the cleared-up intent into a written plan.
+
+Skip the clarity step only when the task is genuinely unambiguous — a named bug, a
+specific file, a mechanical change. When in doubt, one clarifying pass is cheaper than
+a wrong implementation.
+
 **Open non-trivial work with a plan gate.** Before building a feature, a migration,
 or anything touching more than a couple of files, run `/spec` (precise requirements)
 or `/autoplan` (full review chain). Codex critiques the plan before code exists,
