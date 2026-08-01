@@ -12,6 +12,23 @@ Scanning alone is enough for conversational questions, single-fact lookups, and 
 
 When you invoke one, say so: "Using [skill] to [purpose]." This scoping replaces the blanket "even a 1% chance" rule from superpowers.
 
+# Ultracode
+
+Multi-agent workflow orchestration. For substantial work — big features, audits,
+migrations, broad refactors, exhaustive bug hunts — you have standing authorization
+to run one. Don't wait for the "ultracode" keyword and don't ask permission first.
+
+- Fan out when the work decomposes: many files, many call sites, many independent
+  checks. One agent per unit, verified in parallel.
+- Scout inline first, then orchestrate. Find the work-list yourself, then hand the
+  list to the fleet. Don't spawn agents to discover what a grep would tell you.
+- Close a review-shaped workflow with an adversarial verify pass — independent
+  skeptics per finding, majority verdict kills it.
+- Plan gates still apply. Ultracode executes a plan faster; it does not replace
+  the clarity and planning steps below.
+- Stay solo for trivial edits, single-file changes, and conversational turns. A
+  workflow that costs more than the task is a mistake, not thoroughness.
+
 # Git commits
 
 Every commit message: conventional commits format, one or two lines max. No exceptions.
