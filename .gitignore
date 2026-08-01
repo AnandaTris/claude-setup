@@ -12,12 +12,13 @@
 !settings.local.json
 !hooks/**
 !statusline-command.sh
-!projects/*/memory/**
 !skill guide download for Claude.md
 
 # 3. Re-exclude heavy or churny trees entirely so git never walks them.
+# projects/ holds per-project memory — kept local, never versioned.
 /backups/
 /cache/
+/projects/
 /daemon/
 /downloads/
 /file-history/
