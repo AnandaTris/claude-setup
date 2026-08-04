@@ -11,6 +11,7 @@
 !settings.json
 !settings.local.json
 !hooks/**
+!sounds/**
 !statusline-command.sh
 !skill guide download for Claude.md
 

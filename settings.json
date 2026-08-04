@@ -59,6 +59,19 @@
           }
         ]
       }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ~/.claude/hooks/marcel-detector.sh",
+            "async": true,
+            "timeout": 15,
+            "statusMessage": "Marcel detector"
+          }
+        ]
+      }
     ]
   },
   "statusLine": {
@@ -80,10 +93,10 @@
     }
   },
   "effortLevel": "xhigh",
-  "autoCompactEnabled": true,
   "autoCompactWindow": 200000,
-  "precomputeCompactionEnabled": true,
   "tui": "fullscreen",
-  "agentPushNotifEnabled": true,
-  "skipWorkflowUsageWarning": true
+  "skipWorkflowUsageWarning": true,
+  "autoCompactEnabled": true,
+  "precomputeCompactionEnabled": true,
+  "agentPushNotifEnabled": true
 }
