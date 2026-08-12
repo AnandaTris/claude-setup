@@ -33,10 +33,23 @@
       "Grep(//**/.zshrc)",
       "Grep(//**/.zshenv)",
       "Grep(//**/.zprofile)",
-      "Grep(//**/.bash_profile)"
+      "Grep(//**/.bash_profile)",
+      "Read(//Users/anandatriharismaroso/dev/8x_Internship/Keys)",
+      "Read(//Users/anandatriharismaroso/dev/8x_Internship/Keys/**)",
+      "Read(//Users/anandatriharismaroso/dev/8x_Internship/keys)",
+      "Read(//Users/anandatriharismaroso/dev/8x_Internship/keys/**)",
+      "Grep(//Users/anandatriharismaroso/dev/8x_Internship/Keys/**)",
+      "Grep(//Users/anandatriharismaroso/dev/8x_Internship/keys/**)",
+      "Glob(//Users/anandatriharismaroso/dev/8x_Internship/Keys/**)",
+      "Glob(//Users/anandatriharismaroso/dev/8x_Internship/keys/**)",
+      "Edit(//Users/anandatriharismaroso/dev/8x_Internship/Keys/**)",
+      "Edit(//Users/anandatriharismaroso/dev/8x_Internship/keys/**)",
+      "Write(//Users/anandatriharismaroso/dev/8x_Internship/Keys/**)",
+      "Write(//Users/anandatriharismaroso/dev/8x_Internship/keys/**)"
     ],
     "defaultMode": "auto"
   },
+  "model": "opus[1m]",
   "hooks": {
     "PreToolUse": [
       {
@@ -66,9 +79,35 @@
           {
             "type": "command",
             "command": "bash ~/.claude/hooks/marcel-detector.sh",
-            "async": true,
             "timeout": 15,
-            "statusMessage": "Marcel detector"
+            "statusMessage": "Marcel detector",
+            "async": true
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh ~/.claude/sync/hooks/session-check.sh",
+            "timeout": 15,
+            "statusMessage": "Config sync check"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh ~/.claude/sync/hooks/config-drift.sh",
+            "timeout": 15,
+            "statusMessage": "Config drift check",
+            "async": true
           }
         ]
       }
@@ -82,7 +121,8 @@
     "frontend-design@claude-plugins-official": true,
     "vercel@claude-plugins-official": true,
     "clangd-lsp@claude-plugins-official": true,
-    "superpowers@superpowers-marketplace": true
+    "superpowers@superpowers-marketplace": true,
+    "posthog@claude-plugins-official": true
   },
   "extraKnownMarketplaces": {
     "superpowers-marketplace": {

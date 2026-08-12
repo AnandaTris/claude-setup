@@ -134,7 +134,8 @@ check() {
   # Audit only: these files have different vendor schemas, so sync.sh reports on
   # them and never edits them. Acting on what it says is a human decision.
   echo "settings audit (report only, never edited):"
-  _dn=$(grep -c 'Keys' "$HOME/.claude/settings.json" 2>/dev/null || echo 0)
+  # Case-insensitive: the rules cover both Keys/ and keys/.
+  _dn=$(grep -ci 'keys' "$HOME/.claude/settings.json" 2>/dev/null || echo 0)
   echo "  claude: $_dn deny-rule line(s) mention the Keys store"
   if [ -f "$HOME/.codex/config.toml" ]; then
     if grep -qE '^\s*(deny|denied|block)' "$HOME/.codex/config.toml" 2>/dev/null; then

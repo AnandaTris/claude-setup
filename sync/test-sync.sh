@@ -81,5 +81,49 @@ sh "$SYNC/sync.sh" --check >/dev/null 2>&1 && ok "restored tree exits 0" || no "
 # The audit must surface the fact that Codex has no deny-rule mechanism.
 sh "$SYNC/sync.sh" --check 2>&1 | grep -qi 'deny' && ok "audit reports deny posture" || no "audit reports deny posture"
 
+echo "-- drift hook --"
+H="$SYNC/hooks/config-drift.sh"
+[ -x "$H" ] && ok "hook is executable" || no "hook is executable"
+
+# An edit somewhere unrelated must be ignored entirely.
+OUT=$(printf '%s' '{"tool_name":"Edit","tool_input":{"file_path":"/tmp/unrelated.txt"}}' | sh "$H" 2>&1)
+[ -z "$OUT" ] && ok "ignores unrelated paths" || no "ignores unrelated paths (got: $OUT)"
+
+# A clean synced file must also stay quiet.
+sh "$SYNC/sync.sh" apply >/dev/null 2>&1
+OUT=$(printf '{"tool_name":"Edit","tool_input":{"file_path":"%s/core.md"}}' "$SYNC" | sh "$H" 2>&1)
+[ -z "$OUT" ] && ok "quiet when in sync" || no "quiet when in sync (got: $OUT)"
+
+# Drift on a watched path must be reported.
+SAVE=$(mktemp); cp "$HOME/.claude/CLAUDE.md" "$SAVE"
+printf '\ndrift\n' >> "$HOME/.claude/CLAUDE.md"
+OUT=$(printf '{"tool_name":"Edit","tool_input":{"file_path":"%s/core.md"}}' "$SYNC" | sh "$H" 2>&1)
+printf '%s' "$OUT" | grep -qi 'sync' && ok "reports drift on watched path" || no "reports drift on watched path"
+printf '%s' "$OUT" | grep -q '"hookEventName"' && ok "emits hook JSON" || no "emits hook JSON"
+cp "$SAVE" "$HOME/.claude/CLAUDE.md"; rm -f "$SAVE"
+
+echo "-- session hook --"
+SH="$SYNC/hooks/session-check.sh"
+[ -x "$SH" ] && ok "session hook executable" || no "session hook executable"
+sh "$SYNC/sync.sh" apply >/dev/null 2>&1
+OUT=$(sh "$SH" 2>&1); RC=$?
+[ -z "$OUT" ] && ok "silent when in sync" || no "silent when in sync (got: $OUT)"
+[ "$RC" -eq 0 ] && ok "exits 0 when in sync" || no "exits 0 when in sync"
+SAVE=$(mktemp); cp "$HOME/.claude/CLAUDE.md" "$SAVE"; printf '\ndrift\n' >> "$HOME/.claude/CLAUDE.md"
+OUT=$(sh "$SH" 2>&1); RC=$?
+printf '%s' "$OUT" | grep -qi 'out of sync' && ok "reports drift at session start" || no "reports drift at session start"
+[ "$RC" -eq 0 ] && ok "never fails the session" || no "never fails the session"
+cp "$SAVE" "$HOME/.claude/CLAUDE.md"; rm -f "$SAVE"
+
+echo "-- settings wiring --"
+S="$HOME/.claude/settings.json"
+jq -e . "$S" >/dev/null 2>&1 && ok "settings.json is valid json" || no "settings.json is valid json"
+jq -e '.hooks.SessionStart[]?.hooks[]? | select(.command | test("session-check"))' "$S" >/dev/null 2>&1 \
+  && ok "SessionStart wired" || no "SessionStart wired"
+jq -e '.hooks.PostToolUse[]? | select(.matcher | test("Edit|Write"))' "$S" >/dev/null 2>&1 \
+  && ok "PostToolUse scoped to edits" || no "PostToolUse scoped to edits"
+jq -e '.permissions.deny | map(select(test("Keys";"i"))) | length >= 12' "$S" >/dev/null 2>&1 \
+  && ok "Keys deny rules intact" || no "Keys deny rules intact"
+
 # === APPEND NEW ASSERTIONS ABOVE THIS LINE ===
 [ "$FAIL" -eq 0 ] && echo "PASS" || echo "FAILURES"; exit "$FAIL"
