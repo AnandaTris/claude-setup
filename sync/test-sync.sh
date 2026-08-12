@@ -62,5 +62,24 @@ done
 # Idempotent: a second run must not fail or duplicate.
 sh "$SYNC/sync.sh" link-skills >/dev/null 2>&1 && ok "link-skills is idempotent" || no "link-skills is idempotent"
 
+echo "-- drift check --"
+sh "$SYNC/sync.sh" apply >/dev/null 2>&1
+sh "$SYNC/sync.sh" --check >/dev/null 2>&1 && ok "clean tree exits 0" || no "clean tree exits 0"
+
+# Tamper with a generated file; --check must notice and must not repair it.
+SAVE=$(mktemp)
+cp "$HOME/.claude/CLAUDE.md" "$SAVE"
+printf '\nhand-edited line that apply would erase\n' >> "$HOME/.claude/CLAUDE.md"
+BEFORE=$(shasum < "$HOME/.claude/CLAUDE.md")
+OUT=$(sh "$SYNC/sync.sh" --check 2>&1); RC=$?
+[ "$RC" -ne 0 ] && ok "drift exits nonzero" || no "drift exits nonzero"
+printf '%s' "$OUT" | grep -q 'CLAUDE.md' && ok "names the drifted file" || no "names the drifted file"
+[ "$(shasum < "$HOME/.claude/CLAUDE.md")" = "$BEFORE" ] && ok "check is read-only" || no "check is read-only"
+cp "$SAVE" "$HOME/.claude/CLAUDE.md"; rm -f "$SAVE"
+sh "$SYNC/sync.sh" --check >/dev/null 2>&1 && ok "restored tree exits 0" || no "restored tree exits 0"
+
+# The audit must surface the fact that Codex has no deny-rule mechanism.
+sh "$SYNC/sync.sh" --check 2>&1 | grep -qi 'deny' && ok "audit reports deny posture" || no "audit reports deny posture"
+
 # === APPEND NEW ASSERTIONS ABOVE THIS LINE ===
 [ "$FAIL" -eq 0 ] && echo "PASS" || echo "FAILURES"; exit "$FAIL"

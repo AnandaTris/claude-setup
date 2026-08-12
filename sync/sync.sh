@@ -78,6 +78,79 @@ apply() {
   fi
 }
 
+# Report drift without touching anything. Exit 1 if any gap is found.
+# Never dumps config.toml or settings.json — they hold MCP tokens and API keys;
+# only counts and yes/no answers come out.
+check() {
+  _gaps=0
+  echo "drift:"
+  _t=$(mktemp)
+  if render "$SYNC/vars.claude" "$SYNC/core.md" "$SYNC/overlay.claude.md" "$_t" 2>/dev/null &&
+     cmp -s "$_t" "$CLAUDE_MD"; then
+    echo "  ok   CLAUDE.md matches the template"
+  else
+    echo "  GAP  CLAUDE.md differs from the template — run: sync.sh apply"; _gaps=$((_gaps + 1))
+  fi
+  if [ -d "$HOME/.codex" ]; then
+    if render "$SYNC/vars.codex" "$SYNC/core.md" "$SYNC/overlay.codex.md" "$_t" 2>/dev/null &&
+       cmp -s "$_t" "$CODEX_MD"; then
+      echo "  ok   AGENTS.md matches the template"
+    else
+      echo "  GAP  AGENTS.md differs from the template — run: sync.sh apply"; _gaps=$((_gaps + 1))
+    fi
+  fi
+  rm -f "$_t"
+
+  echo "hooks:"
+  for _h in block-secret-reads.sh marcel-detector.sh; do
+    if [ -L "$HOME/.claude/hooks/$_h" ]; then
+      echo "  ok   claude/$_h -> shared copy"
+    else
+      echo "  GAP  claude/$_h is not a symlink to sync/hooks"; _gaps=$((_gaps + 1))
+    fi
+  done
+  _cg="$HOME/.codex/hooks/block-secret-reads.sh"
+  if [ -L "$_cg" ] && cmp -s "$_cg" "$SYNC/hooks/block-secret-reads.sh"; then
+    echo "  ok   codex guard is the shared copy"
+  else
+    echo "  GAP  codex guard is stale or missing — the Keys store is underprotected"; _gaps=$((_gaps + 1))
+  fi
+
+  echo "skills:"
+  _missing=0
+  for _s in $SKILL_GAP; do
+    [ -e "$HOME/.codex/skills/$_s" ] || _missing=$((_missing + 1))
+  done
+  if [ "$_missing" -eq 0 ]; then
+    echo "  ok   all shared skills present on codex"
+  else
+    echo "  GAP  $_missing skill(s) not linked — run: sync.sh link-skills"; _gaps=$((_gaps + 1))
+  fi
+
+  # Audit only: these files have different vendor schemas, so sync.sh reports on
+  # them and never edits them. Acting on what it says is a human decision.
+  echo "settings audit (report only, never edited):"
+  _dn=$(grep -c 'Keys' "$HOME/.claude/settings.json" 2>/dev/null || echo 0)
+  echo "  claude: $_dn deny-rule line(s) mention the Keys store"
+  if [ -f "$HOME/.codex/config.toml" ]; then
+    if grep -qE '^\s*(deny|denied|block)' "$HOME/.codex/config.toml" 2>/dev/null; then
+      echo "  codex:  config.toml has deny-style entries"
+    else
+      echo "  codex:  config.toml has NO deny mechanism — the shared hook guard is"
+      echo "          the only thing protecting the Keys store on this host"
+    fi
+  fi
+  if [ -f "$HOME/.codex/hooks.json" ]; then
+    grep -q block-secret-reads "$HOME/.codex/hooks.json" && echo "  codex:  guard wired in hooks.json" \
+      || { echo "  GAP  codex hooks.json does not call the guard"; _gaps=$((_gaps + 1)); }
+    grep -q UserPromptSubmit "$HOME/.codex/hooks.json" && echo "  codex:  marcel-detector wired in hooks.json" \
+      || echo "  note:  marcel-detector not wired on codex"
+  fi
+
+  [ "$_gaps" -eq 0 ] && echo "in sync." || echo "$_gaps gap(s) found."
+  [ "$_gaps" -eq 0 ]
+}
+
 usage() {
   cat >&2 <<'EOF'
 usage: sync.sh <command>
@@ -93,5 +166,6 @@ case "${1:-}" in
   render) shift; render "$@" ;;
   apply) apply ;;
   link-skills) link_skills ;;
+  --check|check) check ;;
   *) usage ;;
 esac
