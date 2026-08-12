@@ -42,12 +42,37 @@ render() { # <vars> <core> <overlay> <out>
   mv "$_tmp" "$_out"
 }
 
+# Symlink the gap skills into Codex. ~/.claude/skills is canonical — the copies
+# under ~/.agents/skills have diverged and some carry empty SKILL.md files.
+link_skills() {
+  [ -d "$HOME/.codex/skills" ] || { echo "  note: ~/.codex/skills absent, skipped"; return 0; }
+  _made=0; _skip=0; _bad=0
+  for s in $SKILL_GAP; do
+    _src="$HOME/.claude/skills/$s"
+    _dst="$HOME/.codex/skills/$s"
+    if [ ! -s "$_src/SKILL.md" ]; then
+      echo "  warn: $s has no readable SKILL.md, not linked" >&2; _bad=$((_bad + 1)); continue
+    fi
+    # Never clobber a real directory Codex owns; only manage our own symlink.
+    if [ -e "$_dst" ] && [ ! -L "$_dst" ]; then
+      echo "  warn: $s exists as a real dir in codex, left alone" >&2; _bad=$((_bad + 1)); continue
+    fi
+    if [ -L "$_dst" ] && [ "$(readlink "$_dst")" = "$_src" ]; then
+      _skip=$((_skip + 1)); continue
+    fi
+    ln -sfn "$_src" "$_dst" && _made=$((_made + 1))
+  done
+  echo "  skills: $_made linked, $_skip already current, $_bad skipped"
+  [ "$_bad" -eq 0 ]
+}
+
 apply() {
   render "$SYNC/vars.claude" "$SYNC/core.md" "$SYNC/overlay.claude.md" "$CLAUDE_MD" || return 1
   echo "  wrote $CLAUDE_MD"
   if [ -d "$HOME/.codex" ]; then
     render "$SYNC/vars.codex" "$SYNC/core.md" "$SYNC/overlay.codex.md" "$CODEX_MD" || return 1
     echo "  wrote $CODEX_MD"
+    link_skills || return 1
   else
     echo "  note: ~/.codex absent, skipped"
   fi
@@ -67,5 +92,6 @@ EOF
 case "${1:-}" in
   render) shift; render "$@" ;;
   apply) apply ;;
+  link-skills) link_skills ;;
   *) usage ;;
 esac

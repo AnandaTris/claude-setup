@@ -43,5 +43,24 @@ b=$(wc -c < "$HOME/.codex/hooks/block-secret-reads.sh" 2>/dev/null || echo 0)
 [ "$a" = "$b" ] && [ "$a" -gt 0 ] && ok "guards byte-identical ($a)" || no "guards byte-identical ($a vs $b)"
 grep -q UserPromptSubmit "$HOME/.codex/hooks.json" 2>/dev/null && ok "codex wires marcel-detector" || no "codex wires marcel-detector"
 
+echo "-- codex skill links --"
+sh "$SYNC/sync.sh" link-skills >/dev/null 2>&1 || no "link-skills exits clean"
+GAP='_gstack-command connect-chrome docx emil-design-eng expo-native-ui
+expo-router expo-web-to-native find-skills gemini-media higgsfield-generate
+higgsfield-soul-id higgsfield-video-explainer humanizer impeccable pptx
+react-native-best-practices xlsx'
+bad=0; cnt=0
+for s in $GAP; do
+  cnt=$((cnt+1))
+  [ -L "$HOME/.codex/skills/$s" ] || { bad=$((bad+1)); continue; }
+  [ -s "$HOME/.codex/skills/$s/SKILL.md" ] || bad=$((bad+1))
+done
+[ "$bad" -eq 0 ] && ok "all $cnt gap skills linked and readable" || no "$bad of $cnt gap skills bad"
+# The outside-voice pair must stay asymmetric: each host sees only its own.
+[ -e "$HOME/.codex/skills/codex" ] && no "codex skill not pushed to codex" || ok "codex skill not pushed to codex"
+[ -e "$HOME/.claude/skills/gstack-claude" ] && no "gstack-claude stays codex-only" || ok "gstack-claude stays codex-only"
+# Idempotent: a second run must not fail or duplicate.
+sh "$SYNC/sync.sh" link-skills >/dev/null 2>&1 && ok "link-skills is idempotent" || no "link-skills is idempotent"
+
 # === APPEND NEW ASSERTIONS ABOVE THIS LINE ===
 [ "$FAIL" -eq 0 ] && echo "PASS" || echo "FAILURES"; exit "$FAIL"
