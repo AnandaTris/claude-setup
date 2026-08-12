@@ -125,5 +125,12 @@ jq -e '.hooks.PostToolUse[]? | select(.matcher | test("Edit|Write"))' "$S" >/dev
 jq -e '.permissions.deny | map(select(test("Keys";"i"))) | length >= 12' "$S" >/dev/null 2>&1 \
   && ok "Keys deny rules intact" || no "Keys deny rules intact"
 
+echo "-- no competing instruction files --"
+# Stale copies here would be loaded alongside the generated ones and silently
+# reintroduce the drift this whole thing exists to remove.
+[ -e "$HOME/.claude/AGENTS.md" ] && no "~/.claude/AGENTS.md stays retired" || ok "~/.claude/AGENTS.md stays retired"
+[ -e "$HOME/AGENTS.md" ] && no "~/AGENTS.md stays retired" || ok "~/AGENTS.md stays retired"
+[ -f "$HOME/.codex/AGENTS.md" ] && ok "codex keeps its generated AGENTS.md" || no "codex keeps its generated AGENTS.md"
+
 # === APPEND NEW ASSERTIONS ABOVE THIS LINE ===
 [ "$FAIL" -eq 0 ] && echo "PASS" || echo "FAILURES"; exit "$FAIL"
