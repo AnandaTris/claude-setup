@@ -33,5 +33,15 @@ grep -lq '{{' "$HOME/.claude/CLAUDE.md" "$HOME/.codex/AGENTS.md" 2>/dev/null \
 grep -q '^# Secrets' "$HOME/.codex/AGENTS.md" && ok "codex now carries Secrets" || no "codex now carries Secrets"
 grep -q '^# Model allocation' "$HOME/.codex/AGENTS.md" && no "codex omits Model allocation" || ok "codex omits Model allocation"
 
+echo "-- shared hook scripts --"
+for h in block-secret-reads.sh marcel-detector.sh; do
+  [ -L "$HOME/.claude/hooks/$h" ] && ok "claude $h is a symlink" || no "claude $h is a symlink"
+done
+[ -L "$HOME/.codex/hooks/block-secret-reads.sh" ] && ok "codex guard is a symlink" || no "codex guard is a symlink"
+a=$(wc -c < "$HOME/.claude/hooks/block-secret-reads.sh" 2>/dev/null || echo 0)
+b=$(wc -c < "$HOME/.codex/hooks/block-secret-reads.sh" 2>/dev/null || echo 0)
+[ "$a" = "$b" ] && [ "$a" -gt 0 ] && ok "guards byte-identical ($a)" || no "guards byte-identical ($a vs $b)"
+grep -q UserPromptSubmit "$HOME/.codex/hooks.json" 2>/dev/null && ok "codex wires marcel-detector" || no "codex wires marcel-detector"
+
 # === APPEND NEW ASSERTIONS ABOVE THIS LINE ===
 [ "$FAIL" -eq 0 ] && echo "PASS" || echo "FAILURES"; exit "$FAIL"
