@@ -42,6 +42,17 @@ render() { # <vars> <core> <overlay> <out>
   mv "$_tmp" "$_out"
 }
 
+apply() {
+  render "$SYNC/vars.claude" "$SYNC/core.md" "$SYNC/overlay.claude.md" "$CLAUDE_MD" || return 1
+  echo "  wrote $CLAUDE_MD"
+  if [ -d "$HOME/.codex" ]; then
+    render "$SYNC/vars.codex" "$SYNC/core.md" "$SYNC/overlay.codex.md" "$CODEX_MD" || return 1
+    echo "  wrote $CODEX_MD"
+  else
+    echo "  note: ~/.codex absent, skipped"
+  fi
+}
+
 usage() {
   cat >&2 <<'EOF'
 usage: sync.sh <command>
@@ -55,5 +66,6 @@ EOF
 
 case "${1:-}" in
   render) shift; render "$@" ;;
+  apply) apply ;;
   *) usage ;;
 esac
