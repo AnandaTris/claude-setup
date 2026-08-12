@@ -14,6 +14,9 @@
 !sounds/**
 !statusline-command.sh
 !skill guide download for Claude.md
+# Canonical source for the Claude/Codex config sync, and its design docs.
+!sync/**
+!docs/**
 
 # 3. Re-exclude heavy or churny trees entirely so git never walks them.
 # projects/ holds per-project memory — kept local, never versioned.
