@@ -1,0 +1,10 @@
+# Host bindings for Codex. Consumed by sync.sh render.
+SELF=Codex
+OTHER=Claude
+REVIEW=gstack-review
+SPEC=gstack-spec
+AUTOPLAN=gstack-autoplan
+SHIP=gstack-ship
+CHALLENGE=gstack-claude challenge
+BRAINSTORM=brainstorming
+GSTACK_NAMING=namespaced skills, e.g. `gstack-review`

@@ -1,0 +1,10 @@
+# Host bindings for Claude Code. Consumed by sync.sh render.
+SELF=Claude Code
+OTHER=Codex
+REVIEW=/review
+SPEC=/spec
+AUTOPLAN=/autoplan
+SHIP=/ship
+CHALLENGE=/codex challenge
+BRAINSTORM=superpowers:brainstorming
+GSTACK_NAMING=slash commands, e.g. `/review`
