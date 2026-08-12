@@ -26,14 +26,18 @@ render() { # <vars> <core> <overlay> <out>
   [ -f "$_v" ] || { echo "sync: no vars file $_v" >&2; return 1; }
   [ -f "$_c" ] || { echo "sync: no core file $_c" >&2; return 1; }
   [ -f "$_o" ] || { echo "sync: no overlay file $_o" >&2; return 1; }
-  _tmp=$(mktemp)
-  { printf '%s\n\n' "$HDR"; cat "$_c"; printf '\n'; cat "$_o"; } > "$_tmp"
-  while IFS='=' read -r k val; do
-    case "$k" in ''|\#*) continue ;; esac
-    esc=$(printf '%s' "$val" | sed 's/[&|\\]/\\&/g')
-    # Portable in-place edit: BSD and GNU sed disagree on -i, so avoid it.
-    sed "s|{{$k}}|$esc|g" "$_tmp" > "$_tmp.n" && mv "$_tmp.n" "$_tmp"
-  done < "$_v"
+  _tmp=$(mktemp); _prog=$(mktemp)
+  # One awk builds the whole sed program (escaping & | \ in each value), then a
+  # single sed pass applies it. Spawning a process per variable made this ~20x
+  # slower, which matters: --check runs on a PostToolUse hook. BSD and GNU sed
+  # disagree on -i, so write to a new file rather than editing in place.
+  awk -F= '
+    /^[[:space:]]*#/ || /^[[:space:]]*$/ { next }
+    { k = $1; v = $0; sub(/^[^=]*=/, "", v); gsub(/[\\&|]/, "\\\\&", v)
+      printf "s|{{%s}}|%s|g\n", k, v }
+  ' "$_v" > "$_prog"
+  { printf '%s\n\n' "$HDR"; cat "$_c"; printf '\n'; cat "$_o"; } | sed -f "$_prog" > "$_tmp"
+  rm -f "$_prog"
   if grep -q '{{[A-Z_]*}}' "$_tmp"; then
     echo "sync: unbound variable(s) rendering $_c:" >&2
     grep -o '{{[A-Z_]*}}' "$_tmp" | sort -u >&2
