@@ -132,5 +132,35 @@ echo "-- no competing instruction files --"
 [ -e "$HOME/AGENTS.md" ] && no "~/AGENTS.md stays retired" || ok "~/AGENTS.md stays retired"
 [ -f "$HOME/.codex/AGENTS.md" ] && ok "codex keeps its generated AGENTS.md" || no "codex keeps its generated AGENTS.md"
 
+echo "-- versioned codex config --"
+CX="$SYNC/codex"
+[ -f "$CX/hooks.json" ] && ok "hooks.json is in the repo" || no "hooks.json is in the repo"
+[ -L "$HOME/.codex/hooks.json" ] && ok "codex hooks.json is a symlink" || no "codex hooks.json is a symlink"
+jq -e . "$HOME/.codex/hooks.json" >/dev/null 2>&1 && ok "codex reads valid json" || no "codex reads valid json"
+jq -e '.hooks.PreToolUse' "$HOME/.codex/hooks.json" >/dev/null 2>&1 && ok "guard still wired" || no "guard still wired"
+jq -e '.hooks.UserPromptSubmit' "$HOME/.codex/hooks.json" >/dev/null 2>&1 && ok "marcel still wired" || no "marcel still wired"
+
+[ -f "$CX/config.settings.toml" ] && ok "settings snapshot exists" || no "settings snapshot exists"
+# The snapshot must hold only hand-authored scalars — no project paths, no state.
+grep -qE '^\[projects\.|^\[hooks\.state|^\[plugins\.' "$CX/config.settings.toml" 2>/dev/null \
+  && no "snapshot excludes machine churn" || ok "snapshot excludes machine churn"
+# overlay.codex.md promises xhigh is the default; config must actually say so.
+grep -q 'model_reasoning_effort = "xhigh"' "$CX/config.settings.toml" 2>/dev/null \
+  && ok "snapshot pins xhigh effort" || no "snapshot pins xhigh effort"
+
+# Drift between the snapshot and the live config must be reported.
+sh "$SYNC/sync.sh" --check 2>&1 | grep -q 'codex settings' && ok "check reports settings" || no "check reports settings"
+
+echo "-- nothing secret is versioned --"
+# auth.json holds the OAuth tokens and must never be copied into the repo.
+[ -e "$CX/auth.json" ] && no "auth.json never enters the repo" || ok "auth.json never enters the repo"
+HITS=""
+for f in $(git -C "$HOME/.claude" ls-files 'sync/codex/*' 2>/dev/null); do
+  [ -f "$HOME/.claude/$f" ] || continue
+  grep -qEi 'sk-[A-Za-z0-9]{16}|ghp_[A-Za-z0-9]{20}|BEGIN [A-Z ]*PRIVATE KEY|eyJ[A-Za-z0-9_-]{30}' \
+    "$HOME/.claude/$f" && HITS="$HITS $f"
+done
+[ -z "$HITS" ] && ok "tracked codex files carry no credentials" || no "credentials found in:$HITS"
+
 # === APPEND NEW ASSERTIONS ABOVE THIS LINE ===
 [ "$FAIL" -eq 0 ] && echo "PASS" || echo "FAILURES"; exit "$FAIL"

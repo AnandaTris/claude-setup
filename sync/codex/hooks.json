@@ -1,0 +1,39 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r \".tool_input.command // \\\"\\\"\" | sed -E \"s/\\.env\\.(example|sample|template)//g\" | grep -qiE \"\\.env(rc)?([^A-Za-z0-9]|$)\" && printf \"%s\" \"{\\\"hookSpecificOutput\\\":{\\\"hookEventName\\\":\\\"PreToolUse\\\",\\\"permissionDecision\\\":\\\"deny\\\",\\\"permissionDecisionReason\\\":\\\"Blocked: this command references a .env file. Your settings deny access to .env contents (Read deny rules plus this hook), and that applies to Bash too. Ask the user to run it themselves, or use .env.example instead.\\\"}}\" || true",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "bash '/Users/anandatriharismaroso/.codex/hooks/block-secret-reads.sh'",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "jq -r \".tool_input.command // \\\"\\\"\" | grep -qiE \"git[[:space:]]+push.*(--force|--mirror|[[:space:]]-f([[:space:]]|$))\" && printf \"%s\" \"{\\\"hookSpecificOutput\\\":{\\\"hookEventName\\\":\\\"PreToolUse\\\",\\\"permissionDecision\\\":\\\"deny\\\",\\\"permissionDecisionReason\\\":\\\"Blocked: force push. You review force pushes yourself. Run it manually if you actually want it.\\\"}}\" || true",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /Users/anandatriharismaroso/.claude/sync/hooks/marcel-detector.sh",
+            "timeout": 15,
+            "statusMessage": "Marcel detector",
+            "async": true
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -46,6 +46,29 @@ render() { # <vars> <core> <overlay> <out>
   mv "$_tmp" "$_out"
 }
 
+# Point Codex at the versioned hooks.json. Only files that are hand-authored
+# and stable get this treatment — config.toml is machine-rewritten and stays
+# untracked, and auth.json holds live tokens and is never touched.
+link_codex_config() {
+  [ -d "$HOME/.codex" ] || return 0
+  _src="$SYNC/codex/hooks.json"; _dst="$HOME/.codex/hooks.json"
+  [ -f "$_src" ] || { echo "  warn: $_src missing, codex hooks left alone" >&2; return 1; }
+  if [ -e "$_dst" ] && [ ! -L "$_dst" ]; then
+    # A real file here means Codex or a human replaced the link. Keep it, and
+    # keep the copy that was there — losing hook wiring would be silent.
+    if cmp -s "$_dst" "$_src"; then
+      ln -sfn "$_src" "$_dst"; echo "  codex hooks.json: relinked (content matched)"
+    else
+      echo "  warn: ~/.codex/hooks.json is a real file and differs from the repo copy;" >&2
+      echo "        left alone — diff it, then delete it to adopt the versioned one" >&2
+      return 1
+    fi
+  else
+    ln -sfn "$_src" "$_dst"
+  fi
+  return 0
+}
+
 # Symlink the gap skills into Codex. ~/.claude/skills is canonical — the copies
 # under ~/.agents/skills have diverged and some carry empty SKILL.md files.
 link_skills() {
@@ -76,6 +99,7 @@ apply() {
   if [ -d "$HOME/.codex" ]; then
     render "$SYNC/vars.codex" "$SYNC/core.md" "$SYNC/overlay.codex.md" "$CODEX_MD" || return 1
     echo "  wrote $CODEX_MD"
+    link_codex_config || return 1
     link_skills || return 1
   else
     echo "  note: ~/.codex absent, skipped"
@@ -113,6 +137,12 @@ check() {
       echo "  GAP  claude/$_h is not a symlink to sync/hooks"; _gaps=$((_gaps + 1))
     fi
   done
+  if [ ! -d "$HOME/.codex" ]; then :
+  elif [ -L "$HOME/.codex/hooks.json" ] && cmp -s "$HOME/.codex/hooks.json" "$SYNC/codex/hooks.json"; then
+    echo "  ok   codex hooks.json is the versioned copy"
+  else
+    echo "  GAP  codex hooks.json is not the versioned copy — run: sync.sh apply"; _gaps=$((_gaps + 1))
+  fi
   _cg="$HOME/.codex/hooks/block-secret-reads.sh"
   if [ -L "$_cg" ] && cmp -s "$_cg" "$SYNC/hooks/block-secret-reads.sh"; then
     echo "  ok   codex guard is the shared copy"
@@ -143,6 +173,30 @@ check() {
     else
       echo "  codex:  config.toml has NO deny mechanism — the shared hook guard is"
       echo "          the only thing protecting the Keys store on this host"
+    fi
+  fi
+  # config.toml is rewritten by Codex constantly (project trust, plugin state),
+  # so it is never symlinked or edited — only its hand-authored scalars are
+  # snapshotted, and only those are compared.
+  _snap="$SYNC/codex/config.settings.toml"
+  _live="$HOME/.codex/config.toml"
+  if [ -f "$_snap" ] && [ -f "$_live" ]; then
+    _diff=0
+    while IFS= read -r _line; do
+      case "$_line" in ''|\#*) continue ;; esac
+      _k=${_line%%=*}; _k=$(printf '%s' "$_k" | tr -d ' ')
+      # Read the key from the preamble only, before the first [section].
+      _got=$(awk -v k="$_k" '/^\[/{exit} $0 ~ "^"k"[ \t]*=" {sub(/^[^=]*=[ \t]*/,""); print; exit}' "$_live")
+      _want=${_line#*=}; _want=$(printf '%s' "$_want" | sed 's/^[[:space:]]*//')
+      if [ "$_got" != "$_want" ]; then
+        echo "  codex settings: $_k is ${_got:-unset}, snapshot says $_want"; _diff=$((_diff + 1))
+      fi
+    done < "$_snap"
+    if [ "$_diff" -eq 0 ]; then
+      echo "  codex settings: match the snapshot"
+    else
+      echo "  note:  $_diff setting(s) drifted — update sync/codex/config.settings.toml"
+      echo "         if the change was deliberate; sync.sh never edits config.toml"
     fi
   fi
   if [ -f "$HOME/.codex/hooks.json" ]; then

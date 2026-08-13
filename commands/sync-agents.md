@@ -39,8 +39,25 @@ generated file. Move that edit into the right source file above before running
 `apply`, or `apply` will discard it. Recover the lost text with
 `git -C ~/.claude diff` before regenerating.
 
+## Versioned Codex config
+
+`~/.codex` is not a git repo, so the hand-authored parts live in `~/.claude/sync/codex/`
+and are versioned there:
+
+- `hooks.json` — the real file; `~/.codex/hooks.json` is a symlink to it. Edit either.
+- `config.settings.toml` — a read-only snapshot of the scalar settings in
+  `~/.codex/config.toml` (model, effort, approval policy, sandbox mode).
+
+If `--check` says a codex setting drifted, Ado changed it in Codex. That is normal.
+Update the snapshot to match if the change was intentional — **never write to
+`config.toml`**, which Codex rewrites itself as projects get trusted.
+
 ## What this only reports
 
-`settings.json`, `~/.codex/config.toml`, and `~/.codex/hooks.json` have different
-vendor schemas, so sync.sh audits them and never edits them. Acting on the audit
-is your call — tell Ado what it found rather than silently changing those files.
+`settings.json` and `~/.codex/config.toml` have different vendor schemas and are
+partly machine-written, so sync.sh audits them and never edits them. Acting on the
+audit is your call — tell Ado what it found rather than silently changing them.
+
+Never version `~/.codex/auth.json` (live OAuth tokens), `history.jsonl`, or any
+`*.sqlite` — they are private session state, and two of those databases are
+several hundred MB.

@@ -1,0 +1,18 @@
+# Hand-authored Codex settings, snapshotted from ~/.codex/config.toml.
+# sync.sh --check compares the live file against these and reports drift.
+#
+# Only stable, hand-chosen scalars live here. Deliberately excluded:
+#   [projects.*]     trust levels Codex appends as you trust directories
+#   [plugins.*] / [marketplaces.*] / [hooks.state]  install + runtime state
+#   [mcp_servers.*]  machine-specific paths and OAuth urls
+#   notify           an absolute path into the installed Codex app bundle
+#
+# This is a reference copy, not a source: sync.sh never writes config.toml.
+
+personality = "none"
+model = "gpt-5.6-sol"
+model_reasoning_effort = "xhigh"
+approval_policy = "on-request"
+approvals_reviewer = "auto_review"
+sandbox_mode = "workspace-write"
+service_tier = "default"
