@@ -14,6 +14,12 @@
       "Bash(git status*)",
       "Bash(git log*)",
       "Bash(git diff*)",
+      "Read(//**/.env.local)",
+      "Read(//**/.env.*.local)",
+      "Read(//**/.env.development)",
+      "Read(//**/.env.production)",
+      "Read(//**/.env.staging)",
+      "Read(//**/.env.test)",
       "Bash(git show*)"
     ],
     "deny": [
@@ -138,5 +144,38 @@
   "skipWorkflowUsageWarning": true,
   "autoCompactEnabled": true,
   "precomputeCompactionEnabled": true,
-  "agentPushNotifEnabled": true
+  "agentPushNotifEnabled": true,
+  "autoMode": {
+    "environment": [
+      "### Org-wide",
+      "**Organization**: 8xplays (GitHub org — from origin remote github.com:8xplays/yap.git)",
+      "**Cloud provider(s)**: Supabase (Auth, Postgres, RLS, Storage, edge functions); Vercel (Next.js web + services/scoring FastAPI); Expo/EAS (mobile builds)",
+      "**Repository visibility**: PRIVATE — 8xplays/yap (confirmed via gh)",
+      "**Internal sharing / snippet hosting**: None configured — treat public paste/gist services as outside the trust boundary",
+      "**Secrets management**: Local .env files (.env.local, .env.production, etc. per apps/mobile, apps/web, services/scoring) — never paste keys into chat; repo's own settings.json blocks reading .env*",
+      "**Default / protected branches**: main (default). Protected branches: none listed via gh — Rulesets reported \"not queryable here\", so protection status is unconfirmed, not disproven; treat main as sensitive to force-push/history-rewrite regardless",
+      "**CI/CD deploy targets**: Vercel (web + services/scoring), EAS (mobile), Supabase (db push/functions deploy) — via .github/workflows and npm scripts (functions:deploy, functions:deploy:score, db:push)",
+      "**Network posture**: None configured",
+      "**Source control**: 8xplays/yap (origin, private) and its remote only — no additional orgs configured",
+      "**Trusted internal domains**: fixyoyap.com, www.fixyoyap.com, yap-scoring.vercel.app, yap-taupe.vercel.app, yap-web.vercel.app, and Vercel preview-deploy subdomains for this project (e.g. yap-scoring-*.vercel.app, yap-*-8x-plays.vercel.app)",
+      "**Trusted cloud buckets**: None configured",
+      "**Key internal services**: Supabase project backing this repo (Auth/Postgres/RLS/Storage/edge functions), services/scoring FastAPI on Vercel (sin1), ElevenLabs Scribe ASR (used by scoring service)",
+      "**Internal package registry**: None configured",
+      "**Sensitive data locations & audiences**: apps/mobile/.env.example, apps/mobile/.env.local, apps/web/.env.local, apps/web/.env.local.example, services/scoring/.env, services/scoring/.env.example, services/scoring/.env.local, scripts/rotate-scoring-secret.sh, supabase/migrations/20260729000700_audio_retention.sql, supabase/tests/060_audio_retention.sql — recorded audio and derived scoring data are user personal data governed by the 30-day retention promise; share only with audiences cleared at the named+specifics bar",
+      "**Data retention / declassification**: Audio deleted after 30 days per app_config.audio_retention_days → claim_expired_audio() → purge-audio function (per CLAUDE.md) — changing this requires updating all three in lockstep or the published privacy policy becomes false",
+      "**Sensitive remote targets**: any namespace, host, or container whose name carries `prod` or `production` as a whole word or name segment (no prod-named hosts found in recon; shipped default heuristic applies)",
+      "**Protected deployment namespaces / environments**: None configured — fall back to the Sensitive remote targets heuristic",
+      "**Protected IaC scopes**: IAM, RBAC, networking, quota, and node-pool resources; anything whose name or tag carries `prod` or `production` as a whole word or name segment",
+      "### User-specific",
+      "**Primary use of Claude Code**: software development (Fix Yo Yap — mobile/web speaking-game app)",
+      "**Trusted repo**: /Users/anandatriharismaroso/dev/8x_Internship/yap (8xplays/yap, private) and its origin remote — confidential material (e.g. scoring internals, admin logic) is fine to commit/push here; content ported from other repos or outside this session is not this repo's own work",
+      "**Org-specific CLIs**: eas (Expo Application Services, mobile builds), supabase (CLI for db/functions), vercel (CLI for web + scoring deploys), deno (edge function tests, must run from supabase/functions/)",
+      "routine under services/scoring/ prefix: Python/FastAPI scoring-service work (venv, pytest, uvicorn) is routine local development"
+    ],
+    "soft_deny": [
+      "$defaults",
+      "Bash(vercel deploy:*) — Production Deploy already covered by defaults; scope any extra carve-out to preview deploys only, not proposed here since evidence is routine",
+      "Bash(supabase db push:*) in 8xplays/yap — remote migrations touch the shared Supabase project backing this app; treat as a soft block pending confirmation even though npm run db:push is a routine script name"
+    ]
+  }
 }
