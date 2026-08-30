@@ -1,0 +1,33 @@
+#!/bin/sh
+# plugin-toggle — flip a plugin on or off in ~/.claude/settings.json.
+#
+#   plugin-toggle                 list every plugin and its state
+#   plugin-toggle posthog on      enable  (prefix match on the plugin name)
+#   plugin-toggle posthog off     disable
+#
+# Restart Claude Code for the change to take effect.
+set -eu
+S="$HOME/.claude/settings.json"
+[ -f "$S" ] || { echo "no settings.json at $S" >&2; exit 1; }
+
+if [ $# -eq 0 ]; then
+  jq -r '.enabledPlugins | to_entries[] | "  \(if .value then "on " else "off" end)  \(.key)"' "$S"
+  exit 0
+fi
+
+name=$1; state=${2:-}
+case "$state" in
+  on)  want=true ;;
+  off) want=false ;;
+  *)   echo "usage: plugin-toggle <name> <on|off>" >&2; exit 2 ;;
+esac
+
+key=$(jq -r --arg n "$name" '.enabledPlugins | keys[] | select(startswith($n))' "$S" | head -1)
+[ -n "$key" ] || { echo "no plugin matching '$name'. Known:" >&2; \
+  jq -r '.enabledPlugins | keys[] | "  \(.)"' "$S" >&2; exit 1; }
+
+tmp=$(mktemp)
+jq --arg k "$key" --argjson v "$want" '.enabledPlugins[$k] = $v' "$S" > "$tmp"
+jq -e . "$tmp" >/dev/null || { rm -f "$tmp"; echo "refusing to write invalid JSON" >&2; exit 1; }
+mv "$tmp" "$S"
+echo "$key -> $state (restart Claude Code to apply)"

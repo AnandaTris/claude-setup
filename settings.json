@@ -133,7 +133,7 @@
     "vercel@claude-plugins-official": true,
     "clangd-lsp@claude-plugins-official": true,
     "superpowers@superpowers-marketplace": true,
-    "posthog@claude-plugins-official": true
+    "posthog@claude-plugins-official": false
   },
   "extraKnownMarketplaces": {
     "superpowers-marketplace": {
