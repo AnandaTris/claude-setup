@@ -71,6 +71,17 @@
             "timeout": 10
           }
         ]
+      },
+      {
+        "matcher": "Edit|Write|NotebookEdit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh ~/.claude/hooks/edit-fact-gate.sh",
+            "timeout": 10,
+            "statusMessage": "Fact gate"
+          }
+        ]
       }
     ],
     "UserPromptSubmit": [
@@ -138,8 +149,14 @@
   "skipWorkflowUsageWarning": true,
   "autoCompactEnabled": true,
   "precomputeCompactionEnabled": true,
+  "remoteControlAtStartup": true,
   "agentPushNotifEnabled": true,
   "autoMode": {
+    "soft_deny": [
+      "$defaults",
+      "Bash(vercel deploy:*) — Production Deploy already covered by defaults; scope any extra carve-out to preview deploys only, not proposed here since evidence is routine",
+      "Bash(supabase db push:*) in 8xplays/yap — remote migrations touch the shared Supabase project backing this app; treat as a soft block pending confirmation even though npm run db:push is a routine script name"
+    ],
     "environment": [
       "### Org-wide",
       "**Organization**: 8xplays (GitHub org — from origin remote github.com:8xplays/yap.git)",
@@ -165,11 +182,6 @@
       "**Trusted repo**: /Users/anandatriharismaroso/dev/8x_Internship/yap (8xplays/yap, private) and its origin remote — confidential material (e.g. scoring internals, admin logic) is fine to commit/push here; content ported from other repos or outside this session is not this repo's own work",
       "**Org-specific CLIs**: eas (Expo Application Services, mobile builds), supabase (CLI for db/functions), vercel (CLI for web + scoring deploys), deno (edge function tests, must run from supabase/functions/)",
       "routine under services/scoring/ prefix: Python/FastAPI scoring-service work (venv, pytest, uvicorn) is routine local development"
-    ],
-    "soft_deny": [
-      "$defaults",
-      "Bash(vercel deploy:*) — Production Deploy already covered by defaults; scope any extra carve-out to preview deploys only, not proposed here since evidence is routine",
-      "Bash(supabase db push:*) in 8xplays/yap — remote migrations touch the shared Supabase project backing this app; treat as a soft block pending confirmation even though npm run db:push is a routine script name"
     ]
   }
 }
