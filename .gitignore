@@ -11,6 +11,7 @@
 !settings.json
 !settings.local.json
 !hooks/**
+!bin/**
 !sounds/**
 !statusline-command.sh
 !skill guide download for Claude.md
@@ -44,6 +45,9 @@
 /skills/*
 !/skills/gemini-media/
 !/skills/gemini-media/**
+# config-audit has no upstream either — written here, measures this install.
+!/skills/config-audit/
+!/skills/config-audit/**
 
 # Never track app-written state, macOS cruft, or secrets.
 .DS_Store
