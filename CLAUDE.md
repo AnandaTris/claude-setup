@@ -33,6 +33,32 @@ gets the cheap path; work where being wrong is expensive gets the expensive one.
 Never pay top tier for a grep sweep, and never economise on an architecture
 call, an auth/money/concurrency change, or a migration.
 
+# Roadmaps
+
+Every project gets a `ROADMAP.md` at its root, and it is the single source of
+truth for that project. An agent resuming with no context reads it first and
+comes away knowing what the thing is, what actually works, and what is next.
+
+Three parts, always:
+
+- **The end goal.** What "finished" means, in a sentence, plus the gates that
+  prove it. A roadmap with no stopping condition is a wishlist.
+- **State**, dated. What exists and is verified working right now. Say plainly
+  what is untested rather than letting it read as passing.
+- **What's next**, ordered by what blocks the goal — not by what is fun to build.
+
+Update it in the same turn you ship the change. Not "later", not batched at the
+end of a session: implemented something, it goes in the roadmap before you
+report done. Slips and abandoned work get written too — a roadmap that only
+records wins is a lie, and the next session pays for it.
+
+Locked decisions live there with their reasoning. That is what stops a future
+session relitigating a settled call. If the log outgrows the plan, split the
+history into `PROGRESS.md` and keep `ROADMAP.md` forward-looking.
+
+Scope: real projects — anything that earns a plan gate. Not one-off scripts,
+coursework exercises, or a single-file fix in someone else's repo.
+
 # Git commits
 
 Every commit message: conventional commits format, one or two lines max. No exceptions.
@@ -101,9 +127,21 @@ inside a project (`~/dev/<project>`), never from `~/dev` itself.
 
 # Ultracode
 
-Multi-agent workflow orchestration. For substantial work — big features, audits,
-migrations, broad refactors, exhaustive bug hunts — you have standing authorization
-to run one. Don't wait for the "ultracode" keyword and don't ask permission first.
+Multi-agent workflow orchestration. **Off by default.** Do NOT spawn subagents,
+dispatch the Agent tool, or run a workflow unless Ado asks for it in that turn.
+There is no standing authorization. The old "don't ask permission first" rule is
+revoked — it produced agents on conversational questions and burned tokens for
+nothing.
+
+If a task genuinely looks like it wants fan-out, say so in one line and let him
+call it. Answer from your own tools in the meantime; do not pre-emptively dispatch
+"just to verify".
+
+Subagents save YOUR context, not tokens. Their work is billed in full even though
+the transcript never enters your window. A single lookup agent can cost ~90k
+tokens. Treat that as the price of every dispatch.
+
+When he does ask:
 
 - Fan out when the work decomposes: many files, many call sites, many independent
   checks. One agent per unit, verified in parallel.

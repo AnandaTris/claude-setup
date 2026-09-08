@@ -31,6 +31,32 @@ gets the cheap path; work where being wrong is expensive gets the expensive one.
 Never pay top tier for a grep sweep, and never economise on an architecture
 call, an auth/money/concurrency change, or a migration.
 
+# Roadmaps
+
+Every project gets a `ROADMAP.md` at its root, and it is the single source of
+truth for that project. An agent resuming with no context reads it first and
+comes away knowing what the thing is, what actually works, and what is next.
+
+Three parts, always:
+
+- **The end goal.** What "finished" means, in a sentence, plus the gates that
+  prove it. A roadmap with no stopping condition is a wishlist.
+- **State**, dated. What exists and is verified working right now. Say plainly
+  what is untested rather than letting it read as passing.
+- **What's next**, ordered by what blocks the goal — not by what is fun to build.
+
+Update it in the same turn you ship the change. Not "later", not batched at the
+end of a session: implemented something, it goes in the roadmap before you
+report done. Slips and abandoned work get written too — a roadmap that only
+records wins is a lie, and the next session pays for it.
+
+Locked decisions live there with their reasoning. That is what stops a future
+session relitigating a settled call. If the log outgrows the plan, split the
+history into `PROGRESS.md` and keep `ROADMAP.md` forward-looking.
+
+Scope: real projects — anything that earns a plan gate. Not one-off scripts,
+coursework exercises, or a single-file fix in someone else's repo.
+
 # Git commits
 
 Every commit message: conventional commits format, one or two lines max. No exceptions.
