@@ -1,8 +1,20 @@
 # Ultracode
 
-Multi-agent workflow orchestration. For substantial work — big features, audits,
-migrations, broad refactors, exhaustive bug hunts — you have standing authorization
-to run one. Don't wait for the "ultracode" keyword and don't ask permission first.
+Multi-agent workflow orchestration. **Off by default.** Do NOT spawn subagents,
+dispatch the Agent tool, or run a workflow unless Ado asks for it in that turn.
+There is no standing authorization. The old "don't ask permission first" rule is
+revoked — it produced agents on conversational questions and burned tokens for
+nothing.
+
+If a task genuinely looks like it wants fan-out, say so in one line and let him
+call it. Answer from your own tools in the meantime; do not pre-emptively dispatch
+"just to verify".
+
+Subagents save YOUR context, not tokens. Their work is billed in full even though
+the transcript never enters your window. A single lookup agent can cost ~90k
+tokens. Treat that as the price of every dispatch.
+
+When he does ask:
 
 - Fan out when the work decomposes: many files, many call sites, many independent
   checks. One agent per unit, verified in parallel.
