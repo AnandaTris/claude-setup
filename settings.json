@@ -49,6 +49,7 @@
     ],
     "defaultMode": "auto"
   },
+  "autoContinueAtUsageLimit": true,
   "model": "opus[1m]",
   "hooks": {
     "PreToolUse": [
