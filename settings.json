@@ -49,7 +49,6 @@
     ],
     "defaultMode": "auto"
   },
-  "autoContinueAtUsageLimit": true,
   "model": "opus[1m]",
   "hooks": {
     "PreToolUse": [
@@ -123,6 +122,17 @@
           }
         ]
       }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/anandatriharismaroso/.claude/skills/gstack/hosts/claude/hooks/timeline-stop-hook",
+            "timeout": 5
+          }
+        ]
+      }
     ]
   },
   "statusLine": {
@@ -144,12 +154,18 @@
       }
     }
   },
-  "effortLevel": "xhigh",
+  "effortLevel": "high",
+  "modelSettings": {
+    "claude-opus-5": {
+      "effortLevel": "high"
+    }
+  },
   "autoCompactWindow": 200000,
   "tui": "fullscreen",
   "skipWorkflowUsageWarning": true,
   "autoCompactEnabled": true,
   "precomputeCompactionEnabled": true,
+  "autoContinueAtUsageLimit": true,
   "remoteControlAtStartup": true,
   "agentPushNotifEnabled": true,
   "autoMode": {
