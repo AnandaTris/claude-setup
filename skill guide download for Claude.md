@@ -4,8 +4,8 @@ Restore every Claude Code skill and plugin on a new machine. This file exists
 because `~/.claude/skills/` is **393 MB** — too large for git — but the list of
 *what to reinstall* is a few KB.
 
-**Snapshot taken:** 30 July 2026 · **Machine:** macOS (Apple Silicon)
-**Totals:** 4 plugins · 12 standalone skills · ~49 gstack skills · 3 Anthropic document skills
+**Snapshot taken:** 18 September 2026 · **Machine:** macOS (Apple Silicon)
+**Totals:** 4 plugins · 18 standalone skills · ~49 gstack skills · 3 Anthropic document skills
 
 > **To update this file:** tell Claude *"update the skill guide"*. It re-reads
 > `~/.agents/.skill-lock.json`, `~/.claude/plugins/installed_plugins.json`, and
@@ -39,7 +39,7 @@ Then restart Claude Code and run `/plugin` to confirm.
 |---|---|---|
 | `skills/gstack/` | 389 MB | re-clone, section 3 |
 | `plugins/` | 164 MB | reinstall, section 4 |
-| `~/.agents/skills/` | 9.8 MB | `npx skills add`, section 2 |
+| `~/.agents/skills/` | ~30 MB | `npx skills add`, section 2 |
 | `skills/docx`, `pptx`, `xlsx` | 3.7 MB | section 5 |
 | transcripts, caches, daemon logs | 620 MB | regenerated automatically |
 
@@ -49,7 +49,7 @@ comes back with the clone.
 
 ---
 
-## 2. Standalone skills (12)
+## 2. Standalone skills (18)
 
 Installed with the Skills CLI from [skills.sh](https://skills.sh). These live in
 `~/.agents/skills/` and are symlinked into `~/.claude/skills/`. The machine-readable
@@ -63,6 +63,10 @@ npx skills add emilkowalski/skills             # emil-design-eng
 npx skills add pbakaus/impeccable              # impeccable
 npx skills add expo/skills                     # expo-native-ui, expo-router, expo-web-to-native
 npx skills add callstackincubator/agent-skills # react-native-best-practices
+npx skills add latent-spaces/brag@brag -g -y     # brag (launch videos)
+for s in core animation creative keyframes cli; do   # hyperframes-* (brag's renderer)
+  npx skills add heygen-com/hyperframes@hyperframes-$s -g -y
+done
 ```
 
 Repos holding several skills will prompt for which ones — pick from this list:
@@ -81,8 +85,20 @@ Repos holding several skills will prompt for which ones — pick from this list:
 | `expo-router` | `expo/skills` | `plugins/expo/skills/expo-router/` |
 | `expo-web-to-native` | `expo/skills` | `plugins/expo/skills/expo-web-to-native/` |
 | `react-native-best-practices` | `callstackincubator/agent-skills` | `skills/react-native-best-practices/` |
+| `brag` | `latent-spaces/brag` | `skills/brag/` (16 MB, bundles music + SFX) |
+| `hyperframes-core` | `heygen-com/hyperframes` | `skills/hyperframes-core/` |
+| `hyperframes-animation` | `heygen-com/hyperframes` | `skills/hyperframes-animation/` |
+| `hyperframes-creative` | `heygen-com/hyperframes` | `skills/hyperframes-creative/` |
+| `hyperframes-keyframes` | `heygen-com/hyperframes` | `skills/hyperframes-keyframes/` |
+| `hyperframes-cli` | `heygen-com/hyperframes` | `skills/hyperframes-cli/` |
 
 Afterwards: `npx skills check` to see updates, `npx skills update` to take them.
+
+**`/brag` needs Node 22+** (the `hyperframes` CLI refuses to start on 20) plus
+FFmpeg. Node 22 is installed via nvm; `nvm alias default 22` makes it the
+default. Every 8x project pins `.nvmrc` → 20, so `nvm use` inside one still
+drops back. The five `hyperframes-*` skills are brag's renderer — it is useless
+without them. Codex gets all six through `sync.sh` (they are in `SKILL_GAP`).
 
 ### Do not reinstall these
 
@@ -193,7 +209,7 @@ install in section 3.
 # plugin manifest
 jq -r '.plugins | keys[]' ~/.claude/plugins/installed_plugins.json
 
-# standalone skills (expect 12)
+# standalone skills (expect 18)
 ls -1 ~/.agents/skills | wc -l
 
 # total skills visible to Claude Code
