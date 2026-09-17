@@ -125,6 +125,17 @@ for big features, not small edits.
 **gstack requires a git repo.** It refuses to run outside one, so invoke it from
 inside a project (`~/dev/<project>`), never from `~/dev` itself.
 
+# UI copy
+
+No explanatory caption under a control. Chips, buttons, inputs, toggles and
+pickers do not get a line of prose beneath them saying what they are for or why
+they exist ("we support all four", "this helps us tailor…"). If a control needs
+a sentence to be understood, fix the label, not the caption. Text below a
+control is only for state — a reply to a selection, an error, a price, a
+character count — and stays empty until there is state to show. Applies to every
+project, both languages, before the first draft, so it never has to be stripped
+out afterwards.
+
 # Ultracode
 
 Multi-agent workflow orchestration. **Off by default.** Do NOT spawn subagents,
