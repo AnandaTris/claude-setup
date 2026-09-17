@@ -33,5 +33,33 @@
       "mcp__claude_ai_8x__list_library_notes",
       "mcp__claude_ai_8x__query_knowledge"
     ]
-  }
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ ! -f '/Users/anandatriharismaroso/.claude/skills/impeccable/scripts/impeccable' ] || '/Users/anandatriharismaroso/.claude/skills/impeccable/scripts/impeccable' hook",
+            "timeout": 5,
+            "statusMessage": "Checking UI changes"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ ! -f '/Users/anandatriharismaroso/.claude/skills/impeccable/scripts/impeccable' ] || '/Users/anandatriharismaroso/.claude/skills/impeccable/scripts/impeccable' hook",
+            "timeout": 30,
+            "statusMessage": "Design deep pass"
+          }
+        ]
+      }
+    ]
+  },
+  "description": "Impeccable design detector: immediate-tier checks after Edit/Write on UI files, full-rule deep pass on Stop."
 }
