@@ -1,0 +1,345 @@
+#!/usr/bin/env bash
+# mascot-walk — the little Claude critter trots in on his four stubby legs,
+# sword over his shoulder, kicking a ball. He stops in the middle to say hi,
+# then poofs out of existence. Meant to run right before an interactive
+# `claude` launch; it wipes its own lines on exit so it leaves nothing in
+# scrollback.
+#
+# Drawn in half-blocks: one pixel = one column wide, half a text row tall, so
+# the pixels come out square and the whole thing fits in six rows. The speech
+# bubble is real text, printed by render() on the same pass as the pixels so
+# the cursor only ever moves the way it did before.
+#
+#   NO_MASCOT=1     skip entirely
+#   MASCOT_DELAY    seconds per walk frame (default .015 — bigger is slower)
+#   MASCOT_STEP     pixels moved per frame (default 2 — smaller is slower)
+#   MASCOT_LINE     what he says (default "yow whats good twin")
+#   MASCOT_COLS     force the terminal width (mostly for testing)
+#
+# Tap any key to cut it short. Note that the key is swallowed (along with
+# anything else already queued), so a mashed "   " doesn't land in the prompt
+# of whatever launches next.
+#   mascot-walk --preview   dump a few frames as a plain pixel grid
+set -u
+
+PREVIEW=0
+[[ ${1:-} == --preview ]] && PREVIEW=1
+
+[[ -n ${NO_MASCOT:-} ]] && exit 0
+(( PREVIEW )) || [[ -t 1 ]] || exit 0
+
+ESC=$'\033'
+OFF=$ESC'[0m'
+C_BODY='217;119;87'                     # Claude terracotta, lit side
+C_SHADE='166;86;60'                     # the shade band down his right
+C_EYE='82;56;44'                        # a hole, but never black-on-black
+C_SWORD='176;176;180'                   # his very small sword
+C_BALL='232;220;200'
+C_SPK1='255;238;204'                    # poof glitter, bright -> nearly gone
+C_SPK2='226;170;120'
+C_SPK3='134;96;74'
+C_HEART='233;137;160'
+C_HEART2='139;84;100'
+
+# 15x8 sprite. '#' body, '%' shade, 'E' eye, 'S' sword, 'o' ball,
+# 's/t/u' glitter, 'h/i' heart. Squat block of a body with the top-left corner
+# notched off, two dark eye holes, four stubby legs, and a sword held up.
+SPRITE=(".S..#########%%"
+        ".S.##########%%"
+        ".S.###EE##EE#%%"
+        "SS.###EE##EE#%%"
+        ".%%##########%%"
+        "..%##########%%"
+        "...##.##..##.%%"
+        "...##.##..##.%%")
+LEGS=("...##.....##..."                 # legs 1+3 planted
+      "......##.....%%"                 # legs 2+4 planted
+      "...##.##..##.%%")                # all four down, standing
+OPEN=".S.###EE##EE#%%"
+SHUT=".S.##########%%"                  # blink: top half of the eyes closes
+BOUNCE=(0 2 3 4 4 3 2 1 0 0)            # ball height above the feet
+WOBBLE=(0 0 1 1 2 2 1 1 0 0)            # ball drifts ahead, mascot catches up
+
+# the vanishing act: he squashes, stretches thin, then simply isn't there
+SQUASH=("..###########%%"
+        ".#############%"
+        ".###EE##EE##%%%"
+        ".###EE##EE##%%%"
+        "..###########%%"
+        "...##.##..##.%%")
+STRETCH=(".....######%..."
+         "....#######%%.."
+         "....#EE#EE#%%.."
+         "....#EE#EE#%%.."
+         "....#######%%.."
+         "....#######%%.."
+         ".....#####%%..."
+         ".....#####%%..."
+         "......###%....."
+         "......###%.....")
+BLOB=("####" "####")
+RING1="0,-6,s -5,-4,s 5,-4,s -7,0,s 7,0,s -4,3,s 4,3,s"
+RING2="0,-6,t -8,-5,s 8,-5,s -10,-1,t 10,-1,t -6,4,s 6,4,s 0,5,t"
+RING3="-10,-5,u 10,-5,u 0,-6,u -9,4,u 9,4,u -3,5,u 3,5,u"
+HEART=(".#.#." "#####" ".###." "..#..")
+
+CW=24                                   # canvas width  in pixels
+CH=12                                   # canvas height in pixels -> 6 text rows
+H=$(( CH / 2 ))
+MX=2                                    # where he stands inside the canvas
+MY=2
+BX=$(( MX + 16 ))                       # his ball, just past his back foot
+CX=$(( MX + 8 ))                        # his middle, for the glitter to ring
+CY=$(( MY + 4 ))
+EMPTY=""
+for (( i = 0; i < CW; i++ )); do EMPTY+="."; done
+
+LINE=${MASCOT_LINE:-yow whats good twin}
+BUBW=$(( ${#LINE} + 4 ))                # text, a space either side, two borders
+TABW=$(( MX + 21 + BUBW ))              # him, his ball and the bubble together
+
+# Terminal width. `tput cols` inside $( ) can't see the terminal once stderr is
+# redirected, so ask the tty directly and keep tput as the fallback.
+if (( PREVIEW )); then
+  cols=100
+else
+  cols=${MASCOT_COLS:-}
+  [[ -n $cols ]] || cols=$( { stty size </dev/tty; } 2>/dev/null | cut -d' ' -f2 )
+  [[ -n $cols ]] || cols=$(tput cols 2>/dev/null)
+  [[ $cols =~ ^[0-9]+$ ]] || cols=80
+fi
+SW=$cols                                # screen width in pixels (1px = 1 col)
+(( SW < CW + 4 || SW < ${#LINE} + 2 )) && exit 0
+
+# Room for the bubble? Then centre him and the bubble as one tableau. If not,
+# he stops in the middle and the line just floats over his head.
+if (( SW >= TABW + 2 )); then
+  BUBBLE=1
+  STOPX=$(( (SW - TABW) / 2 ))
+  TXTX=0
+else
+  BUBBLE=0
+  STOPX=$(( (SW - CW) / 2 ))
+  TXTX=$(( STOPX + CX - ${#LINE} / 2 ))
+  (( TXTX < 0 )) && TXTX=0
+  (( TXTX + ${#LINE} > SW )) && TXTX=$(( SW - ${#LINE} ))
+fi
+BUBX=$(( STOPX + MX + 21 ))
+
+STEP=${MASCOT_STEP:-2}
+DELAY=${MASCOT_DELAY:-.015}
+
+CANVAS=()
+TXT=(); TXTC=()
+
+wipe() {                                # blank canvas, no text
+  local i
+  for (( i = 0; i < CH; i++ )); do CANVAS[i]=$EMPTY; done
+  for (( i = 0; i < H;  i++ )); do TXT[i]=""; TXTC[i]=0; done
+}
+
+at() { TXT[$1]=$3; TXTC[$1]=$2; }       # at <text row> <col> <string>
+
+put() {                                 # put <row> <col> <patch>
+  local r=$1 c=$2 p=$3
+  (( r < 0 || r >= CH || c >= CW )) && return
+  (( c < 0 )) && { p=${p:$(( -c ))}; c=0; }
+  (( ${#p} == 0 )) && return
+  (( c + ${#p} > CW )) && p=${p:0:$(( CW - c ))}
+  CANVAS[r]="${CANVAS[r]:0:c}${p}${CANVAS[r]:c+${#p}}"
+}
+
+blit() {                                # blit <row> <col> <patch>...
+  local r=$1 c=$2 p; shift 2
+  for p in "$@"; do put "$r" "$c" "$p"; r=$(( r + 1 )); done
+}
+
+ball() {                                # ball <height> <drift> [bob]
+  local bx=$(( BX + $2 )) by=$(( MY + ${3:-0} + 6 - $1 ))
+  put "$by" "$bx" "oo"; put $(( by + 1 )) "$bx" "oo"
+}
+
+sparkle() {                             # sparkle "dx,dy,char ..."
+  local p dx dy ch
+  for p in $1; do
+    IFS=, read -r dx dy ch <<<"$p"
+    put $(( CY + dy )) $(( CX + dx )) "$ch"
+  done
+}
+
+compose() {                             # compose <bob> <leg> <blink> <bh> <bw>
+  local bob=$1 leg=$2 blink=$3 i
+  wipe
+  if (( blink )); then SPRITE[2]=$SHUT; else SPRITE[2]=$OPEN; fi
+  SPRITE[7]=${LEGS[leg]}
+  for (( i = 0; i < 8; i++ )); do put $(( MY + bob + i )) $MX "${SPRITE[i]}"; done
+  ball "$4" "$5" "$bob"
+}
+
+bubble() {                              # bubble <col> <width> <text>
+  local c=$1 w=$2 s=$3 bar="" i
+  for (( i = 0; i < w - 2; i++ )); do bar+="─"; done
+  while (( ${#s} < w - 4 )); do s+=" "; done
+  at 1 "$c" "╭${bar}╮"
+  at 2 "$c" "╡ ${s:0:$(( w - 4 ))} │"     # the nub points at his eyes
+  at 3 "$c" "╰${bar}╯"
+}
+
+say() {                                 # say <text so far>
+  if (( BUBBLE )); then bubble "$BUBX" "$BUBW" "$1"; else at 0 "$TXTX" "$1"; fi
+}
+
+render() {                              # render <screen_x>
+  local sx=$1 r rr i t b ct cb out start end
+  for (( r = 0; r < CH; r += 2 )); do
+    rr=$(( r / 2 ))
+    printf '%s[2K' "$ESC"
+    start=$(( sx < 0 ? -sx : 0 ))
+    end=$CW
+    (( sx + end > SW )) && end=$(( SW - sx ))
+    if (( start < end )); then
+      out=""
+      for (( i = start; i < end; i++ )); do
+        t=${CANVAS[r]:i:1}
+        b=${CANVAS[r+1]:i:1}
+        if [[ $t == . && $b == . ]]; then out+=" "; continue; fi
+        case $t in '#') ct=$C_BODY ;; '%') ct=$C_SHADE ;; E) ct=$C_EYE ;;
+                   S) ct=$C_SWORD ;; o) ct=$C_BALL ;;
+                   s) ct=$C_SPK1 ;; t) ct=$C_SPK2 ;; u) ct=$C_SPK3 ;;
+                   h) ct=$C_HEART ;; i) ct=$C_HEART2 ;; esac
+        case $b in '#') cb=$C_BODY ;; '%') cb=$C_SHADE ;; E) cb=$C_EYE ;;
+                   S) cb=$C_SWORD ;; o) cb=$C_BALL ;;
+                   s) cb=$C_SPK1 ;; t) cb=$C_SPK2 ;; u) cb=$C_SPK3 ;;
+                   h) cb=$C_HEART ;; i) cb=$C_HEART2 ;; esac
+        if   [[ $t == . ]];  then out+="$ESC[38;2;${cb}m▄$OFF"
+        elif [[ $b == . ]];  then out+="$ESC[38;2;${ct}m▀$OFF"
+        elif [[ $t == "$b" ]]; then out+="$ESC[38;2;${ct}m█$OFF"
+        else out+="$ESC[38;2;${ct}m$ESC[48;2;${cb}m▀$OFF"
+        fi
+      done
+      printf '%s[%dG%s' "$ESC" $(( sx + start + 1 )) "$out"
+    fi
+    [[ -n ${TXT[rr]} ]] && printf '%s[%dG%s' "$ESC" $(( TXTC[rr] + 1 )) "${TXT[rr]}"
+    printf '%s[E' "$ESC"
+  done
+}
+
+if (( PREVIEW )); then
+  dump() {
+    local r i; echo "--- $1 ---"
+    for (( i = 0; i < CH; i++ )); do
+      r=${CANVAS[i]//./ }
+      (( i % 2 == 0 )) && [[ -n ${TXT[i / 2]} ]] && r+="   ${TXT[i / 2]}"
+      echo "|$r"
+    done
+  }
+  for f in 0 3 5; do
+    compose $(( f % 2 )) $(( (f / 4) % 2 )) 0 "${BOUNCE[f]}" "${WOBBLE[f]}"
+    dump "walk f=$f"
+  done
+  compose 0 2 1 0 3; say "$LINE";                       dump "stopped, talking"
+  wipe; blit 6 $MX "${SQUASH[@]}";  ball 0 3; say "$LINE"; dump "squash"
+  wipe; blit 1 $MX "${STRETCH[@]}"; ball 0 3; say "$LINE"; dump "stretch"
+  wipe; blit 5 $(( CX - 2 )) "${BLOB[@]}"; sparkle "$RING1"; ball 0 3; say "$LINE"
+  dump "poof"
+  wipe; sparkle "$RING2"; ball 0 3; say "$LINE";        dump "glitter"
+  wipe; blit 4 $(( MX + 17 )) "${HEART[@]//\#/h}";      dump "outro heart"
+  exit 0
+fi
+
+# Bailing out early. bash 3.2 has no `read -t 0`, and `read -n 1` insists on
+# VMIN=1 and blocks forever, so poll the tty with dd under `min 0 time 0` --
+# that returns zero bytes the moment the buffer is empty. Costs ~2ms a frame.
+TTY_MODE=""
+[[ -r /dev/tty ]] && TTY_MODE=$(stty -g </dev/tty 2>/dev/null)
+
+cleanup() {
+  local i
+  printf '%s[%dA' "$ESC" "$H"
+  for (( i = 0; i < H; i++ )); do printf '%s[2K%s[E' "$ESC" "$ESC"; done
+  printf '%s[%dA%s[?25h' "$ESC" "$H" "$ESC"
+  [[ -n $TTY_MODE ]] && stty "$TTY_MODE" </dev/tty 2>/dev/null
+  return 0
+}
+trap cleanup EXIT INT TERM
+[[ -n $TTY_MODE ]] && stty -echo -icanon min 0 time 0 </dev/tty 2>/dev/null
+
+keyhit() {                              # a key is waiting? (and eats it)
+  [[ -n $TTY_MODE ]] || return 1
+  local k
+  k=$(dd bs=1 count=1 </dev/tty 2>/dev/null; echo .)
+  (( ${#k} > 1 ))
+}
+
+nap() {                                 # sleep, unless he's seen enough
+  sleep "$1"
+  keyhit || return 0
+  while keyhit; do :; done              # swallow the rest of the mash
+  exit 0
+}
+
+draw() { printf '%s[%dA' "$ESC" "$H"; render "$1"; }
+
+for (( i = 0; i < H; i++ )); do printf '\n'; done   # reserve the block
+printf '%s[?25l' "$ESC"
+
+# he walks in ----------------------------------------------------------------
+f=0
+for (( x = -CW; x < STOPX; x += STEP )); do
+  ph=$(( f % 10 ))
+  compose $(( (f / 4) % 2 )) $(( (f / 4) % 2 )) $(( f % 47 < 3 ? 1 : 0 )) \
+          "${BOUNCE[ph]}" "${WOBBLE[ph]}"
+  draw "$x"
+  nap "$DELAY"
+  f=$(( f + 1 ))
+done
+X=$STOPX
+
+# ...and stops. the ball rolls the last bit on its own and settles by his feet.
+SK_B=(2 1 0 1 0 0); SK_W=(1 2 2 3 3 3)
+for i in "${!SK_B[@]}"; do
+  compose 0 $(( i < 2 ? 0 : 1 )) 0 "${SK_B[i]}" "${SK_W[i]}"
+  draw "$X"; nap .045
+done
+
+# notices you
+for b in 1 0; do compose 0 1 "$b" 0 3; draw "$X"; nap .07; done
+
+# bubble puffs up, then he types it out
+if (( BUBBLE )); then
+  for w in 7 15; do
+    compose 0 2 0 0 3; bubble "$BUBX" "$w" ""; draw "$X"; nap .04
+  done
+fi
+for (( i = 1; i <= ${#LINE}; i++ )); do
+  compose 0 2 $(( i % 11 == 0 ? 1 : 0 )) 0 3
+  say "${LINE:0:i}"; draw "$X"; nap .014
+done
+compose 0 2 0 0 3; say "$LINE"; draw "$X"; nap .3
+
+# and vanishes ---------------------------------------------------------------
+wipe; blit 6 $MX "${SQUASH[@]}";  ball 0 3; say "$LINE"; draw "$X"; nap .07
+wipe; blit 1 $MX "${STRETCH[@]}"; ball 0 3; say "$LINE"; draw "$X"; nap .06
+wipe; blit 5 $(( CX - 2 )) "${BLOB[@]}"; sparkle "$RING1"; ball 0 3
+say "$LINE"; draw "$X"; nap .05
+wipe; sparkle "$RING2"; ball 0 3; say "$LINE"; draw "$X"; nap .06
+wipe; sparkle "$RING3"; ball 0 3; say "$LINE"; draw "$X"; nap .07
+
+# the bubble hangs there on its own for a beat, then deflates
+wipe; ball 0 3; say "$LINE"; draw "$X"; nap .18
+if (( BUBBLE )); then
+  for w in 15 7; do
+    wipe; ball 0 3; bubble "$BUBX" "$w" ""; draw "$X"; nap .05
+  done
+fi
+
+# the ball is still here. looks around for him. hops after him. becomes a heart.
+for w in 2 3; do wipe; ball 0 "$w"; draw "$X"; nap .09; done
+for h in 2 3 1; do wipe; ball "$h" 3; draw "$X"; nap .06; done
+for r in 6 4; do
+  wipe; blit "$r" $(( MX + 17 )) "${HEART[@]//\#/h}"; draw "$X"; nap .08
+done
+for r in 2 0; do
+  wipe; blit "$r" $(( MX + 17 )) "${HEART[@]//\#/i}"; draw "$X"; nap .08
+done
+wipe; draw "$X"; nap .15
