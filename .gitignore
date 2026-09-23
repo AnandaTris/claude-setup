@@ -48,6 +48,9 @@
 # config-audit has no upstream either — written here, measures this install.
 !/skills/config-audit/
 !/skills/config-audit/**
+# consumer-app-ux is hand-authored here too: first-session contract + research.
+!/skills/consumer-app-ux/
+!/skills/consumer-app-ux/**
 
 # Never track app-written state, macOS cruft, or secrets.
 .DS_Store

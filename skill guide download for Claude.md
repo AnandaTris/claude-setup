@@ -196,6 +196,12 @@ rather than hardcoding it.
 It expects the Gemini API key exported in `~/.zshrc`, which is **not** in this
 repo. Re-export it on the new machine before using the skill.
 
+**`skills/consumer-app-ux`** — first-session contract for consumer apps
+(onboarding, signup placement, navigation, empty states, permissions, paywall,
+habit loop) plus a sourced research file and a scorable audit checklist.
+Hand-authored here on 22 September 2026, no upstream; tested 23 September 2026 with a no-skill vs with-skill build of the same brief scored by an opus judge against the checklist (54% vs 89% of applicable items, 7 vs 2 launch blockers) and revised from the critic and judge reports. **Committed to this repo**
+and shared to Codex through `sync.sh` (it is in `SKILL_GAP`).
+
 **`skills/connect-chrome`** — an empty directory on this machine. Git cannot
 store empty directories, so it will not come back. It appears to be a stub for
 the gstack browser launcher; `/connect-chrome` should work from gstack's own
