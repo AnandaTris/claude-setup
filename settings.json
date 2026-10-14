@@ -40,16 +40,12 @@
       "Read(//Users/anandatriharismaroso/dev/8x_Internship/keys/**)",
       "Grep(//Users/anandatriharismaroso/dev/8x_Internship/Keys/**)",
       "Grep(//Users/anandatriharismaroso/dev/8x_Internship/keys/**)",
-      "Glob(//Users/anandatriharismaroso/dev/8x_Internship/Keys/**)",
-      "Glob(//Users/anandatriharismaroso/dev/8x_Internship/keys/**)",
       "Edit(//Users/anandatriharismaroso/dev/8x_Internship/Keys/**)",
-      "Edit(//Users/anandatriharismaroso/dev/8x_Internship/keys/**)",
-      "Write(//Users/anandatriharismaroso/dev/8x_Internship/Keys/**)",
-      "Write(//Users/anandatriharismaroso/dev/8x_Internship/keys/**)"
+      "Edit(//Users/anandatriharismaroso/dev/8x_Internship/keys/**)"
     ],
     "defaultMode": "auto"
   },
-  "model": "opus[1m]",
+  "model": "opus",
   "hooks": {
     "PreToolUse": [
       {
@@ -131,7 +127,8 @@
             "command": "/Users/anandatriharismaroso/.claude/skills/gstack/hosts/claude/hooks/timeline-stop-hook",
             "timeout": 5
           }
-        ]
+        ],
+        "_gstack_source": "gstack-timeline-stop"
       }
     ]
   },
@@ -165,6 +162,7 @@
   "skipWorkflowUsageWarning": true,
   "autoCompactEnabled": true,
   "precomputeCompactionEnabled": true,
+  "switchModelsOnFlag": true,
   "autoContinueAtUsageLimit": true,
   "remoteControlAtStartup": true,
   "agentPushNotifEnabled": true,
