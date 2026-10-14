@@ -133,3 +133,19 @@ control is only for state — a reply to a selection, an error, a price, a
 character count — and stays empty until there is state to show. Applies to every
 project, both languages, before the first draft, so it never has to be stripped
 out afterwards.
+
+# Brag videos
+
+`/brag` output is named after the project folder: `brag_<foldername>.mp4` and
+`brag_<foldername>.jpg` (e.g. `~/dev/snorecard` → `brag_snorecard.mp4`), not
+the skill's default `brag.mp4`. Render with `--output ../brag_<foldername>.mp4`,
+bake the poster into the same file, and reference that name in the brief.
+
+# Copy-paste text
+
+Any text Ado will copy and paste (WhatsApp messages, email drafts, captions,
+form answers) goes out as bare plain text. No `>` blockquotes and no fenced code
+blocks: his terminal draws bars or borders around both, and they get copied with
+the text. Put a line of ──── on its own line directly above the text and another
+directly below it, and keep commentary outside the lines. Shell commands he runs
+are not copy-paste text; they still go in code blocks.
